@@ -3,17 +3,615 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#1e40af" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>QC Photo Reference</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f8fafc;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --primary: #1e40af;
+        --primary-dark: #1e3a8a;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --danger: #dc2626;
+        --header-text: #ffffff;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        min-height: 100dvh;
+        background: #e8eef7;
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .phone-shell {
+        width: 100%; max-width: 430px; min-height: 100dvh;
+        margin: 0 auto; background: var(--bg);
+        display: flex; flex-direction: column;
+      }
+      @media (min-width: 431px) {
+        .phone-shell {
+          box-shadow: 0 25px 50px -12px rgba(30, 64, 175, 0.15);
+          border-left: 1px solid var(--border);
+          border-right: 1px solid var(--border);
+        }
+      }
+      header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.875rem 1.25rem;
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        flex-shrink: 0;
+      }
+      .header-brand { display: flex; align-items: center; gap: 0.75rem; }
+      .header-logo {
+        width: 40px; height: 40px; object-fit: contain;
+        border-radius: 8px; background: white; padding: 4px;
+      }
+      header .label {
+        font-size: 0.7rem; color: rgba(255,255,255,0.75);
+        text-transform: uppercase; letter-spacing: 0.05em;
+      }
+      header h1 { font-size: 1rem; font-weight: 600; color: var(--header-text); }
+      main {
+        flex: 1; display: flex; flex-direction: column;
+        padding: 1.5rem 1.25rem; overflow-y: auto; background: var(--bg);
+      }
+      .btn-text {
+        background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+        color: white; font-size: 0.875rem; padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem; cursor: pointer;
+      }
+      .btn-text:hover { background: rgba(255,255,255,0.25); }
+      .btn-primary {
+        width: 100%; padding: 1.25rem; border: none; border-radius: 0.75rem;
+        background: var(--accent); color: white; font-size: 1.25rem;
+        font-weight: 600; cursor: pointer;
+      }
+      .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      .btn-secondary {
+        padding: 0.5rem 1rem; border-radius: 0.5rem; background: white;
+        border: 1px solid var(--accent); color: var(--accent);
+        font-size: 0.875rem; cursor: pointer; font-weight: 500;
+      }
+      .btn-secondary:hover { background: #eff6ff; }
+      .btn-danger {
+        padding: 0.5rem 1rem; border-radius: 0.5rem; background: #fef2f2;
+        border: 1px solid #fecaca; color: var(--danger);
+        font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      }
+      .btn-danger:hover:not(:disabled) { background: var(--danger); color: white; border-color: var(--danger); }
+      .field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+      .field label { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
+      .field input {
+        width: 100%; padding: 1rem; border-radius: 0.75rem; background: white;
+        border: 1px solid var(--border); color: var(--text); font-size: 1rem;
+      }
+      .field input:focus {
+        outline: none; border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+      }
+      .field input.lot-input {
+        font-size: 1.5rem; font-family: ui-monospace, monospace;
+        text-align: center; letter-spacing: 0.1em; text-transform: uppercase;
+      }
+      .card { padding: 1rem; border-radius: 1rem; background: var(--surface); border: 1px solid var(--border); }
+      .error {
+        color: #dc2626; font-size: 0.875rem; text-align: center; background: #fef2f2;
+        padding: 0.75rem; border-radius: 0.75rem; margin-bottom: 1rem; border: 1px solid #fecaca;
+      }
+      .success {
+        color: #15803d; font-size: 0.875rem; background: #f0fdf4;
+        padding: 0.5rem 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #bbf7d0;
+      }
+      .center-content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.5rem; }
+      .text-center { text-align: center; }
+      .text-muted { color: var(--muted); font-size: 0.875rem; }
+      .logo-box { width: 5rem; height: 5rem; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
+      .logo-box img, .logo-large { max-width: 5rem; max-height: 5rem; object-fit: contain; }
+      .logo-fallback {
+        width: 40px; height: 40px; border-radius: 8px; background: white;
+        color: var(--primary); font-weight: 700; font-size: 1.25rem;
+        align-items: center; justify-content: center;
+      }
+      .login-title { font-size: 1.25rem; margin-bottom: 0.25rem; color: var(--primary); }
+      .card-title { font-weight: 600; color: var(--primary); }
+      .small { font-size: 0.75rem; }
+      .list-title { font-size: 0.875rem; font-weight: 600; }
+      .empty-state { padding: 2rem 0; }
+      .photo-gallery { display: flex; flex-direction: column; gap: 1rem; }
+      .photo-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem; text-align: center; }
+      .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%; }
+      .preview-item { position: relative; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border); }
+      .preview-item img { width: 100%; height: 5rem; object-fit: cover; }
+      .preview-item span {
+        position: absolute; top: 4px; left: 4px; background: var(--accent);
+        color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
+      }
+      .photo-view { display: flex; flex-direction: column; gap: 1rem; flex: 1; }
+      .photo-header { display: flex; align-items: center; justify-content: space-between; }
+      .lot-display {
+        font-family: ui-monospace, monospace; font-size: 1.5rem; font-weight: 700;
+        letter-spacing: 0.05em; color: var(--primary);
+      }
+      .photo-frame {
+        border-radius: 1rem; overflow: hidden; background: #f1f5f9;
+        border: 1px solid var(--border); padding: 0.75rem;
+      }
+      .photo-frame img { width: 100%; max-height: 60dvh; object-fit: contain; display: block; }
+      .file-input-hidden {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0,0,0,0); border: 0;
+      }
+      .upload-zone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 0.75rem; padding: 2rem 1rem; border-radius: 0.75rem;
+        border: 2px dashed #93c5fd; background: #eff6ff; cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        -webkit-tap-highlight-color: transparent; user-select: none;
+      }
+      .upload-zone:hover, .upload-zone:active { border-color: var(--accent); background: #dbeafe; }
+      .upload-icon { font-size: 2.5rem; }
+      .upload-hint { color: var(--muted); font-size: 0.875rem; }
+      .btn-upload-select {
+        padding: 0.625rem 1.25rem; border-radius: 0.5rem; background: var(--accent);
+        color: white; border: none; font-size: 0.875rem; font-weight: 600;
+        cursor: pointer; pointer-events: none;
+      }
+      .photo-list { display: flex; flex-direction: column; gap: 0.75rem; }
+      .photo-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem; border-radius: 0.75rem; background: white; border: 1px solid var(--border);
+      }
+      .photo-item .lot { font-family: ui-monospace, monospace; font-weight: 700; font-size: 1.125rem; color: var(--primary); }
+      .hidden { display: none !important; }
+      .gap-6 { display: flex; flex-direction: column; gap: 1.5rem; }
+    </style>
   </head>
   <body>
     <div id="app" class="phone-shell"></div>
 
-    <!-- Supabase CDN - ไม่ต้องใช้ Node.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
-    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8"></script>
+    <script>
+      // ====== ตั้งค่า Supabase (แก้ได้ที่นี่) ======
+      window.SUPABASE_URL = "https://izecltrjelhmmpauyryy.supabase.co";
+      window.SUPABASE_ANON_KEY = "sb_publishable_P7jS8drUKuro97IMlHRywQ__DjB1XxK";
+    </script>
+    <script>
+      const { createClient } = supabase;
+
+      const LOGO_PATH = "logo.png";
+      const MAX_PHOTOS_PER_LOT = 3;
+
+      let client = null;
+      let currentUser = null;
+      let currentRole = "user";
+
+      function getClient() {
+        if (!client) {
+          if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || window.SUPABASE_URL.includes("xxxxxxxx")) {
+            throw new Error("กรุณาตั้งค่า Supabase URL/Key ก่อนใช้งาน");
+          }
+          client = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true },
+          });
+        }
+        return client;
+      }
+
+      function logoImg(className) {
+        return `<img src="${LOGO_PATH}" alt="Logo" class="${className}" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')" /><span class="logo-fallback" style="display:none">H</span>`;
+      }
+
+      function shell(title, bodyHtml, showLogout = true) {
+        return `
+          <header>
+            <div class="header-brand">
+              ${logoImg("header-logo")}
+              <div>
+                <p class="label">HEXA QC</p>
+                <h1>${title}</h1>
+              </div>
+            </div>
+            ${showLogout ? '<button class="btn-text" id="logout-btn">ออก</button>' : ""}
+          </header>
+          <main>${bodyHtml}</main>
+        `;
+      }
+
+      function showError(el, msg) { el.innerHTML = `<p class="error">${msg}</p>`; }
+
+      function formatDate(iso) {
+        return new Date(iso).toLocaleDateString("th-TH", {
+          year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+      }
+
+      async function ensureSession() {
+        const { data: { session } } = await getClient().auth.getSession();
+        if (!session) throw new Error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        return session;
+      }
+
+      // ─── Login ───
+      function renderLogin(errorMsg = "") {
+        const app = document.getElementById("app");
+        app.innerHTML = shell(
+          "เข้าสู่ระบบ",
+          `
+          <div class="center-content">
+            <form id="login-form" class="gap-6" style="width:100%">
+              <div class="text-center">
+                <div class="logo-box">${logoImg("logo-large")}</div>
+                <h2 class="login-title">เข้าสู่ระบบ</h2>
+                <p class="text-muted">ดูรูปอ้างอิง QC ตาม Lot No.</p>
+              </div>
+              ${errorMsg ? `<p class="error">${errorMsg}</p>` : ""}
+              <div class="field">
+                <label for="email">อีเมล</label>
+                <input id="email" type="email" required placeholder="your@email.com" autocomplete="email" />
+              </div>
+              <div class="field">
+                <label for="password">รหัสผ่าน</label>
+                <input id="password" type="password" required placeholder="••••••••" autocomplete="current-password" />
+              </div>
+              <button type="submit" class="btn-primary" id="login-btn">เข้าสู่ระบบ</button>
+            </form>
+          </div>
+          `,
+          false
+        );
+
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("login-btn");
+          btn.disabled = true;
+          btn.textContent = "กำลังเข้าสู่ระบบ...";
+
+          try {
+            const rawEmail = document.getElementById("email").value.trim().toLowerCase();
+            const email = rawEmail.includes("@") ? rawEmail : `${rawEmail}@hexarpd.com`;
+            const password = document.getElementById("password").value;
+            const { error } = await getClient().auth.signInWithPassword({ email, password });
+            if (error) {
+              const m = (error.message || "").toLowerCase();
+              if (m.includes("email not confirmed")) {
+                renderLogin("บัญชียังไม่ยืนยันอีเมล — ให้แอดมินเปิด Auto Confirm ใน Supabase");
+              } else if (m.includes("invalid login credentials")) {
+                renderLogin("อีเมลหรือรหัสผ่านไม่ถูกต้อง (ตรวจใน Supabase > Authentication > Users)");
+              } else {
+                renderLogin(`เข้าสู่ระบบไม่สำเร็จ: ${error.message}`);
+              }
+              return;
+            }
+            await initApp();
+          } catch (err) {
+            renderLogin(err.message || "เข้าสู่ระบบไม่สำเร็จ");
+          }
+        });
+      }
+
+      // ─── Search (User) ───
+      function renderSearch() {
+        const app = document.getElementById("app");
+        app.innerHTML = shell(
+          "ค้นหารูป QC",
+          `
+          <div class="center-content" id="search-view">
+            <div class="text-center">
+              <p class="text-muted">ใส่ Lot No. / SO</p>
+              <p class="text-muted">เพื่อดูรูปอ้างอิงจาก QC</p>
+            </div>
+            <form id="search-form">
+              <div id="search-error"></div>
+              <div class="field">
+                <label for="lotNo">Lot No. / SO</label>
+                <input id="lotNo" class="lot-input" type="text" required placeholder="SO-12345" autocomplete="off" />
+              </div>
+              <button type="submit" class="btn-primary" id="search-btn">OK</button>
+            </form>
+          </div>
+          `
+        );
+
+        document.getElementById("logout-btn").addEventListener("click", handleLogout);
+
+        document.getElementById("search-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("search-btn");
+          const errorEl = document.getElementById("search-error");
+          errorEl.innerHTML = "";
+
+          const lotNo = document.getElementById("lotNo").value.trim().toUpperCase();
+          if (!lotNo) return;
+
+          btn.disabled = true;
+          btn.textContent = "กำลังค้นหา...";
+
+          try {
+            const { data: photos, error } = await getClient()
+              .from("photos").select("*").eq("lot_no", lotNo)
+              .order("created_at", { ascending: true });
+
+            if (error || !photos?.length) {
+              showError(errorEl, `ไม่พบรูปสำหรับ SO: ${lotNo}`);
+              return;
+            }
+
+            const urls = [];
+            for (const photo of photos) {
+              const { data: signed, error: signErr } = await getClient()
+                .storage.from("qc-photos").createSignedUrl(photo.storage_path, 3600);
+              if (!signErr && signed?.signedUrl) urls.push(signed.signedUrl);
+            }
+
+            if (!urls.length) {
+              showError(errorEl, "ไม่สามารถโหลดรูปได้ กรุณาลองใหม่");
+              return;
+            }
+
+            renderPhotoView(lotNo, photos, urls);
+          } catch (err) {
+            showError(errorEl, err.message || "ค้นหาไม่สำเร็จ");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "OK";
+          }
+        });
+      }
+
+      function renderPhotoView(lotNo, photos, imageUrls) {
+        const app = document.getElementById("app");
+        app.innerHTML = shell(
+          "ค้นหารูป QC",
+          `
+          <div class="photo-view">
+            <div class="photo-header">
+              <div>
+                <p class="text-muted small">SO / Lot No.</p>
+                <p class="lot-display">${lotNo}</p>
+              </div>
+              <button class="btn-secondary" id="back-btn">ค้นหาใหม่</button>
+            </div>
+            <p class="text-muted small">${imageUrls.length} รูป · อัปโหลด ${formatDate(photos[0].created_at)}</p>
+            <div class="photo-gallery">
+              ${imageUrls.map((url, i) => `
+                <div class="photo-frame">
+                  <p class="photo-label">รูปที่ ${i + 1}</p>
+                  <img src="${url}" alt="QC ${lotNo} - ${i + 1}" />
+                </div>
+              `).join("")}
+            </div>
+            <p class="text-center text-muted">เปรียบเทียบกับงานปัจจุบันของคุณ</p>
+          </div>
+          `
+        );
+
+        document.getElementById("logout-btn").addEventListener("click", handleLogout);
+        document.getElementById("back-btn").addEventListener("click", renderSearch);
+      }
+
+      // ─── QC Dashboard ───
+      function renderQC() {
+        const app = document.getElementById("app");
+        app.innerHTML = shell(
+          "QC Dashboard",
+          `
+          <div class="gap-6">
+            <form id="upload-form" class="card gap-6">
+              <h3 class="card-title">เพิ่มรูป QC ใหม่</h3>
+              <div id="upload-msg"></div>
+              <div class="field">
+                <label for="uploadLot">Lot No. / SO</label>
+                <input id="uploadLot" class="lot-input" type="text" required placeholder="SO-12345" style="font-size:1rem" />
+              </div>
+              <div class="field">
+                <label for="uploadFile">รูปภาพ (สูงสุด ${MAX_PHOTOS_PER_LOT} รูปต่อ SO)</label>
+                <div class="upload-zone" id="upload-zone" role="button" tabindex="0">
+                  <div id="upload-placeholder">
+                    <span class="upload-icon">📷</span>
+                    <span class="upload-hint">แตะเพื่อเลือกรูป</span>
+                    <span class="btn-upload-select">เลือกรูป (1-${MAX_PHOTOS_PER_LOT} รูป)</span>
+                  </div>
+                  <div id="preview-grid" class="preview-grid hidden"></div>
+                </div>
+                <input id="uploadFile" type="file" accept="image/*" multiple class="file-input-hidden" />
+              </div>
+              <button type="submit" class="btn-primary" id="upload-btn" style="font-size:1rem;padding:1rem" disabled>
+                บันทึกรูป QC
+              </button>
+            </form>
+            <div id="photo-list"><p class="text-center text-muted">กำลังโหลด...</p></div>
+          </div>
+          `
+        );
+
+        document.getElementById("logout-btn").addEventListener("click", handleLogout);
+
+        let selectedFiles = [];
+        const fileInput = document.getElementById("uploadFile");
+        const uploadBtn = document.getElementById("upload-btn");
+        const uploadPlaceholder = document.getElementById("upload-placeholder");
+        const previewGrid = document.getElementById("preview-grid");
+        const uploadZone = document.getElementById("upload-zone");
+
+        uploadZone.addEventListener("click", () => fileInput.click());
+        uploadZone.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+        });
+
+        function updateUploadBtn() {
+          uploadBtn.disabled = !document.getElementById("uploadLot").value.trim() || selectedFiles.length === 0;
+        }
+
+        function renderPreviews() {
+          if (!selectedFiles.length) {
+            previewGrid.classList.add("hidden");
+            previewGrid.innerHTML = "";
+            uploadPlaceholder.classList.remove("hidden");
+            return;
+          }
+          uploadPlaceholder.classList.add("hidden");
+          previewGrid.classList.remove("hidden");
+          previewGrid.innerHTML = selectedFiles
+            .map((f, i) => `<div class="preview-item"><img src="${URL.createObjectURL(f)}" alt="preview ${i + 1}" /><span>${i + 1}</span></div>`)
+            .join("");
+        }
+
+        fileInput.addEventListener("change", (e) => {
+          const msgEl = document.getElementById("upload-msg");
+          msgEl.innerHTML = "";
+
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+
+          const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024);
+          if (valid.length !== files.length) {
+            msgEl.innerHTML = '<p class="error">เลือกได้เฉพาะรูปภาพ ไม่เกิน 10MB</p>';
+          }
+
+          selectedFiles = valid.slice(0, MAX_PHOTOS_PER_LOT);
+          if (files.length > MAX_PHOTOS_PER_LOT) {
+            msgEl.innerHTML = `<p class="error">เลือกได้สูงสุด ${MAX_PHOTOS_PER_LOT} รูป</p>`;
+          }
+
+          renderPreviews();
+          updateUploadBtn();
+        });
+
+        document.getElementById("uploadLot").addEventListener("input", updateUploadBtn);
+
+        document.getElementById("upload-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const msgEl = document.getElementById("upload-msg");
+          msgEl.innerHTML = "";
+
+          const lotNo = document.getElementById("uploadLot").value.trim().toUpperCase();
+          if (!lotNo || !selectedFiles.length) return;
+
+          uploadBtn.disabled = true;
+          uploadBtn.textContent = "กำลังอัปโหลด...";
+
+          try {
+            await ensureSession();
+
+            const { count } = await getClient()
+              .from("photos").select("*", { count: "exact", head: true }).eq("lot_no", lotNo);
+
+            const existing = count || 0;
+            if (existing + selectedFiles.length > MAX_PHOTOS_PER_LOT) {
+              throw new Error(`SO ${lotNo} มีรูปอยู่ ${existing} รูปแล้ว เพิ่มได้อีก ${MAX_PHOTOS_PER_LOT - existing} รูป`);
+            }
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+              const file = selectedFiles[i];
+              const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+              const storagePath = `${lotNo}/${Date.now()}_${i}.${ext}`;
+
+              const { error: uploadErr } = await getClient()
+                .storage.from("qc-photos").upload(storagePath, file, { contentType: file.type, upsert: false });
+
+              if (uploadErr) throw new Error(`อัปโหลดรูปที่ ${i + 1} ไม่สำเร็จ: ${uploadErr.message}`);
+
+              const { error: insertErr } = await getClient().from("photos").insert({
+                lot_no: lotNo, storage_path: storagePath, uploaded_by: currentUser.id,
+              });
+
+              if (insertErr) {
+                await getClient().storage.from("qc-photos").remove([storagePath]);
+                throw new Error(`บันทึกรูปที่ ${i + 1} ไม่สำเร็จ`);
+              }
+            }
+
+            msgEl.innerHTML = `<p class="success">บันทึก SO ${lotNo} สำเร็จ ${selectedFiles.length} รูป</p>`;
+            document.getElementById("uploadLot").value = "";
+            selectedFiles = [];
+            fileInput.value = "";
+            renderPreviews();
+            loadPhotoList();
+          } catch (err) {
+            const msg = err.message?.includes("fetch")
+              ? "เชื่อมต่อไม่สำเร็จ — ตรวจ Supabase URL/Key และรัน fix-upload.sql"
+              : err.message || "อัปโหลดไม่สำเร็จ";
+            msgEl.innerHTML = `<p class="error">${msg}</p>`;
+          } finally {
+            uploadBtn.textContent = "บันทึกรูป QC";
+            updateUploadBtn();
+          }
+        });
+
+        loadPhotoList();
+      }
+
+      async function loadPhotoList() {
+        const listEl = document.getElementById("photo-list");
+        const { data: photos } = await getClient()
+          .from("photos").select("*").order("created_at", { ascending: false });
+
+        if (!photos?.length) {
+          listEl.innerHTML = `<div class="text-center empty-state"><p class="text-muted">ยังไม่มีรูป QC</p></div>`;
+          return;
+        }
+
+        listEl.innerHTML = `
+          <p class="text-muted list-title">รายการทั้งหมด (${photos.length})</p>
+          <div class="photo-list">
+            ${photos.map((p) => `
+              <div class="photo-item">
+                <div>
+                  <p class="lot">${p.lot_no}</p>
+                  <p class="text-muted small">${formatDate(p.created_at)}</p>
+                </div>
+                <button class="btn-danger" data-delete="${p.id}" data-lot="${p.lot_no}" data-path="${p.storage_path}">ลบ</button>
+              </div>
+            `).join("")}
+          </div>
+        `;
+
+        listEl.querySelectorAll("[data-delete]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            if (!confirm(`ลบรูป SO ${btn.dataset.lot}?`)) return;
+            btn.disabled = true;
+            await getClient().storage.from("qc-photos").remove([btn.dataset.path]);
+            await getClient().from("photos").delete().eq("id", btn.dataset.delete);
+            loadPhotoList();
+          });
+        });
+      }
+
+      async function handleLogout() {
+        await getClient().auth.signOut();
+        currentUser = null;
+        renderLogin();
+      }
+
+      async function getProfile(userId) {
+        const { data } = await getClient().from("profiles").select("role").eq("id", userId).single();
+        return data?.role || "user";
+      }
+
+      async function initApp() {
+        try {
+          getClient();
+        } catch (err) {
+          renderLogin(err.message);
+          return;
+        }
+
+        const { data: { session } } = await getClient().auth.getSession();
+        if (!session?.user) { renderLogin(); return; }
+
+        currentUser = session.user;
+        currentRole = await getProfile(currentUser.id);
+        currentRole === "qc" ? renderQC() : renderSearch();
+      }
+
+      initApp().catch((err) => {
+        document.getElementById("app").innerHTML = shell("ข้อผิดพลาด", `<p class="error">${err.message}</p>`, false);
+      });
+    </script>
   </body>
 </html>
