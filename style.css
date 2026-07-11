@@ -1,0 +1,469 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --muted: #64748b;
+  --primary: #1e40af;
+  --primary-dark: #1e3a8a;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --header-text: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100dvh;
+  background: #e8eef7;
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.phone-shell {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 431px) {
+  .phone-shell {
+    box-shadow: 0 25px 50px -12px rgba(30, 64, 175, 0.15);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  flex-shrink: 0;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: white;
+  padding: 4px;
+}
+
+header .label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--header-text);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.btn-text {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-text:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 1.25rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: var(--accent);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: white;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background: #eff6ff;
+}
+
+.btn-danger {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.field input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.field input.lot-input {
+  font-size: 1.5rem;
+  font-family: ui-monospace, monospace;
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  text-align: center;
+  background: #fef2f2;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+}
+
+.success {
+  color: #15803d;
+  font-size: 0.875rem;
+  background: #f0fdf4;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #bbf7d0;
+}
+
+.center-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.logo-box {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-box img,
+.logo-large {
+  max-width: 5rem;
+  max-height: 5rem;
+  object-fit: contain;
+}
+
+.logo-fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: white;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.25rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  color: var(--primary);
+}
+
+.card-title {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.small {
+  font-size: 0.75rem;
+}
+
+.list-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.empty-state {
+  padding: 2rem 0;
+}
+
+.photo-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.photo-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.preview-item {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.preview-item img {
+  width: 100%;
+  height: 5rem;
+  object-fit: cover;
+}
+
+.preview-item span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+
+.photo-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+}
+
+.photo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lot-display {
+  font-family: ui-monospace, monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+.photo-frame {
+  flex: 1;
+  min-height: 50dvh;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-frame img {
+  max-width: 100%;
+  max-height: 70dvh;
+  object-fit: contain;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px dashed #93c5fd;
+  background: #eff6ff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.upload-zone:hover,
+.upload-zone:active {
+  border-color: var(--accent);
+  background: #dbeafe;
+}
+
+.upload-zone img {
+  max-height: 10rem;
+  border-radius: 0.5rem;
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+}
+
+.upload-hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.btn-upload-select {
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.photo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.photo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.photo-item .lot {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.gap-6 {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
