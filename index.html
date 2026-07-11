@@ -146,20 +146,56 @@
         position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
         overflow: hidden; clip: rect(0,0,0,0); border: 0;
       }
+      .qc-tabs {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+        margin-bottom: 1rem; flex-shrink: 0;
+      }
+      .qc-tab {
+        padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border);
+        background: white; color: var(--muted); font-size: 0.95rem; font-weight: 600;
+        cursor: pointer;
+      }
+      .qc-tab.active {
+        background: var(--accent); color: white; border-color: var(--accent);
+      }
+      .qc-panel { display: flex; flex-direction: column; gap: 1rem; flex: 1; min-height: 0; }
       .upload-zone {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 0.75rem; padding: 2rem 1rem; border-radius: 0.75rem;
-        border: 2px dashed #93c5fd; background: #eff6ff; cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
+        gap: 0.5rem; padding: 1.25rem 1rem; border-radius: 0.75rem;
+        border: 2px dashed #93c5fd; background: #eff6ff;
         -webkit-tap-highlight-color: transparent; user-select: none;
+        min-height: 7rem;
       }
-      .upload-zone:hover, .upload-zone:active { border-color: var(--accent); background: #dbeafe; }
-      .upload-icon { font-size: 2.5rem; }
-      .upload-hint { color: var(--muted); font-size: 0.875rem; }
-      .btn-upload-select {
-        padding: 0.625rem 1.25rem; border-radius: 0.5rem; background: var(--accent);
-        color: white; border: none; font-size: 0.875rem; font-weight: 600;
-        cursor: pointer; pointer-events: none;
+      .upload-icon { font-size: 2rem; line-height: 1; }
+      .upload-hint { color: var(--muted); font-size: 0.8rem; text-align: center; }
+      .btn-pick-files {
+        width: 100%; padding: 0.875rem; border-radius: 0.75rem;
+        background: white; border: 1px solid var(--accent); color: var(--accent);
+        font-size: 1rem; font-weight: 600; cursor: pointer;
+      }
+      .btn-pick-files:active { background: #eff6ff; }
+      .btn-save-qc { font-size: 1rem; padding: 0.875rem; }
+      .photo-frame.zoomable { cursor: zoom-in; }
+      .photo-frame.zoomable:active { opacity: 0.9; }
+      .lightbox {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.92); display: flex;
+        align-items: center; justify-content: center;
+        padding: 1rem; touch-action: none;
+      }
+      .lightbox img {
+        max-width: 100%; max-height: 100%; object-fit: contain;
+        transform-origin: center center; transition: transform 0.15s ease;
+      }
+      .lightbox-close {
+        position: fixed; top: 1rem; right: 1rem; z-index: 10000;
+        width: 2.5rem; height: 2.5rem; border-radius: 50%;
+        background: rgba(255,255,255,0.2); border: none; color: white;
+        font-size: 1.25rem; cursor: pointer;
+      }
+      .lightbox-hint {
+        position: fixed; bottom: 1.25rem; left: 0; right: 0;
+        text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem;
       }
       .photo-list { display: flex; flex-direction: column; gap: 0.75rem; }
       .photo-item {
@@ -189,6 +225,7 @@
       let client = null;
       let currentUser = null;
       let currentRole = "user";
+      let qcActiveTab = "upload";
 
       function getClient() {
         if (!client) {
@@ -231,9 +268,196 @@
       }
 
       async function ensureSession() {
-        const { data: { session } } = await getClient().auth.getSession();
+        const sb = getClient();
+        let { data: { session } } = await sb.auth.getSession();
         if (!session) throw new Error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+
+        const expiresSoon = session.expires_at * 1000 - Date.now() < 120000;
+        if (expiresSoon) {
+          const { data, error } = await sb.auth.refreshSession();
+          if (error || !data.session) throw new Error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+          session = data.session;
+        }
         return session;
+      }
+
+      function isImageFile(file) {
+        if (file.type && file.type.startsWith("image/")) return true;
+        return /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name);
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      async function compressImage(file) {
+        const MAX_EDGE = 1600;
+        const QUALITY = 0.82;
+
+        if (file.size < 400 * 1024 && file.type === "image/jpeg") return file;
+
+        return new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            let { width, height } = img;
+
+            if (width > MAX_EDGE || height > MAX_EDGE) {
+              if (width >= height) {
+                height = Math.round((height * MAX_EDGE) / width);
+                width = MAX_EDGE;
+              } else {
+                width = Math.round((width * MAX_EDGE) / height);
+                height = MAX_EDGE;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  resolve(file);
+                  return;
+                }
+                const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+                resolve(new File([blob], name, { type: "image/jpeg" }));
+              },
+              "image/jpeg",
+              QUALITY
+            );
+          };
+
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(file);
+          };
+
+          img.src = url;
+        });
+      }
+
+      async function uploadToStorage(path, file) {
+        const contentType = file.type || "image/jpeg";
+        let lastError = null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const { error } = await getClient()
+              .storage.from("qc-photos")
+              .upload(path, file, { contentType, upsert: false, cacheControl: "3600" });
+
+            if (!error) return;
+            lastError = error;
+          } catch (err) {
+            lastError = err;
+          }
+
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 1200));
+        }
+
+        throw lastError || new Error("อัปโหลดไม่สำเร็จ");
+      }
+
+      function getUploadErrorMessage(err) {
+        const msg = (err?.message || String(err)).toLowerCase();
+
+        if (msg.includes("fetch") || msg.includes("network") || msg.includes("load failed")) {
+          return "อัปโหลดจากมือถือไม่สำเร็จ — ลองใช้ Wi-Fi ที่เสถียร หรือถ่ายรูปใหม่แล้วลองอีกครั้ง";
+        }
+        if (msg.includes("jwt") || msg.includes("session") || msg.includes("401")) {
+          return "เซสชันหมดอายุ กรุณาออกแล้วเข้าสู่ระบบใหม่";
+        }
+        if (msg.includes("row-level security") || msg.includes("403")) {
+          return "ไม่มีสิทธิ์อัปโหลด — ตรวจว่าเป็น QC และรัน fix-upload.sql";
+        }
+
+        return err?.message || "อัปโหลดไม่สำเร็จ";
+      }
+
+      function openLightbox(url, alt) {
+        const existing = document.querySelector(".lightbox");
+        if (existing) existing.remove();
+
+        const lb = document.createElement("div");
+        lb.className = "lightbox";
+        lb.innerHTML = `
+          <button class="lightbox-close" aria-label="ปิด">✕</button>
+          <img src="${url}" alt="${alt || "รูป QC"}" />
+          <p class="lightbox-hint">แตะ 2 ครั้งเพื่อซูม · ลากเพื่อเลื่อน · แตะพื้นหลังเพื่อปิด</p>
+        `;
+        document.body.appendChild(lb);
+
+        const img = lb.querySelector("img");
+        let scale = 1;
+        let lastTap = 0;
+        let startX = 0, startY = 0, translateX = 0, translateY = 0;
+        let isDragging = false;
+        let pinchStartDist = 0;
+        let pinchStartScale = 1;
+
+        function applyTransform() {
+          img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        function closeLb() { lb.remove(); }
+
+        lb.querySelector(".lightbox-close").addEventListener("click", closeLb);
+        lb.addEventListener("click", (e) => { if (e.target === lb) closeLb(); });
+
+        img.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          scale = scale === 1 ? 2.5 : 1;
+          if (scale === 1) { translateX = 0; translateY = 0; }
+          applyTransform();
+        });
+
+        img.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            scale = scale === 1 ? 2.5 : 1;
+            if (scale === 1) { translateX = 0; translateY = 0; }
+            applyTransform();
+          }
+          lastTap = now;
+        });
+
+        img.addEventListener("touchstart", (e) => {
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchStartDist = Math.hypot(dx, dy);
+            pinchStartScale = scale;
+          } else if (e.touches.length === 1 && scale > 1) {
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+          }
+        }, { passive: true });
+
+        img.addEventListener("touchmove", (e) => {
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            scale = Math.min(4, Math.max(1, pinchStartScale * (dist / pinchStartDist)));
+            applyTransform();
+          } else if (isDragging && e.touches.length === 1) {
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            applyTransform();
+          }
+        }, { passive: true });
+
+        img.addEventListener("touchend", () => { isDragging = false; });
       }
 
       // ─── Login ───
@@ -379,8 +603,8 @@
             <p class="text-muted small">${imageUrls.length} รูป · อัปโหลด ${formatDate(photos[0].created_at)}</p>
             <div class="photo-gallery">
               ${imageUrls.map((url, i) => `
-                <div class="photo-frame">
-                  <p class="photo-label">รูปที่ ${i + 1}</p>
+                <div class="photo-frame zoomable" data-zoom-url="${url}" data-zoom-alt="QC ${lotNo} - ${i + 1}">
+                  <p class="photo-label">รูปที่ ${i + 1} · แตะเพื่อซูม</p>
                   <img src="${url}" alt="QC ${lotNo} - ${i + 1}" />
                 </div>
               `).join("")}
@@ -392,6 +616,19 @@
 
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
         document.getElementById("back-btn").addEventListener("click", renderSearch);
+        document.querySelectorAll("[data-zoom-url]").forEach((el) => {
+          el.addEventListener("click", () => openLightbox(el.dataset.zoomUrl, el.dataset.zoomAlt));
+        });
+      }
+
+      function switchQCTab(tab) {
+        qcActiveTab = tab;
+        document.querySelectorAll(".qc-tab").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === tab);
+        });
+        document.getElementById("qc-upload-panel").classList.toggle("hidden", tab !== "upload");
+        document.getElementById("qc-list-panel").classList.toggle("hidden", tab !== "list");
+        if (tab === "list") loadPhotoList();
       }
 
       // ─── QC Dashboard ───
@@ -400,48 +637,56 @@
         app.innerHTML = shell(
           "QC Dashboard",
           `
-          <div class="gap-6">
+          <div class="qc-tabs">
+            <button type="button" class="qc-tab ${qcActiveTab === "upload" ? "active" : ""}" data-tab="upload">อัปโหลด</button>
+            <button type="button" class="qc-tab ${qcActiveTab === "list" ? "active" : ""}" data-tab="list">รายการ</button>
+          </div>
+
+          <div id="qc-upload-panel" class="qc-panel ${qcActiveTab === "list" ? "hidden" : ""}">
             <form id="upload-form" class="card gap-6">
               <h3 class="card-title">เพิ่มรูป QC ใหม่</h3>
               <div id="upload-msg"></div>
-              <div class="field">
+              <div class="field" style="margin-bottom:0.75rem">
                 <label for="uploadLot">Lot No. / SO</label>
-                <input id="uploadLot" class="lot-input" type="text" required placeholder="SO-12345" style="font-size:1rem" />
+                <input id="uploadLot" class="lot-input" type="text" required placeholder="SO-12345" style="font-size:1.1rem;padding:0.75rem" />
               </div>
-              <div class="field">
-                <label for="uploadFile">รูปภาพ (สูงสุด ${MAX_PHOTOS_PER_LOT} รูปต่อ SO)</label>
-                <div class="upload-zone" id="upload-zone" role="button" tabindex="0">
+              <div class="field" style="margin-bottom:0.5rem">
+                <label>รูปภาพ (สูงสุด ${MAX_PHOTOS_PER_LOT} รูปต่อ SO)</label>
+                <div class="upload-zone" id="upload-zone">
                   <div id="upload-placeholder">
                     <span class="upload-icon">📷</span>
-                    <span class="upload-hint">แตะเพื่อเลือกรูป</span>
-                    <span class="btn-upload-select">เลือกรูป (1-${MAX_PHOTOS_PER_LOT} รูป)</span>
+                    <span class="upload-hint">เลือกรูป 1-${MAX_PHOTOS_PER_LOT} รูป</span>
                   </div>
                   <div id="preview-grid" class="preview-grid hidden"></div>
                 </div>
+                <button type="button" class="btn-pick-files" id="pick-files-btn">เลือกรูปจากเครื่อง</button>
                 <input id="uploadFile" type="file" accept="image/*" multiple class="file-input-hidden" />
               </div>
-              <button type="submit" class="btn-primary" id="upload-btn" style="font-size:1rem;padding:1rem" disabled>
+              <button type="submit" class="btn-primary btn-save-qc" id="upload-btn" disabled>
                 บันทึกรูป QC
               </button>
             </form>
+          </div>
+
+          <div id="qc-list-panel" class="qc-panel ${qcActiveTab === "upload" ? "hidden" : ""}">
             <div id="photo-list"><p class="text-center text-muted">กำลังโหลด...</p></div>
           </div>
           `
         );
 
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
+        document.querySelectorAll(".qc-tab").forEach((btn) => {
+          btn.addEventListener("click", () => switchQCTab(btn.dataset.tab));
+        });
 
         let selectedFiles = [];
         const fileInput = document.getElementById("uploadFile");
         const uploadBtn = document.getElementById("upload-btn");
         const uploadPlaceholder = document.getElementById("upload-placeholder");
         const previewGrid = document.getElementById("preview-grid");
-        const uploadZone = document.getElementById("upload-zone");
+        const pickBtn = document.getElementById("pick-files-btn");
 
-        uploadZone.addEventListener("click", () => fileInput.click());
-        uploadZone.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
-        });
+        pickBtn.addEventListener("click", () => fileInput.click());
 
         function updateUploadBtn() {
           uploadBtn.disabled = !document.getElementById("uploadLot").value.trim() || selectedFiles.length === 0;
@@ -468,14 +713,16 @@
           const files = Array.from(e.target.files || []);
           if (!files.length) return;
 
-          const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024);
+          const valid = files.filter((f) => isImageFile(f));
           if (valid.length !== files.length) {
-            msgEl.innerHTML = '<p class="error">เลือกได้เฉพาะรูปภาพ ไม่เกิน 10MB</p>';
+            msgEl.innerHTML = '<p class="error">เลือกได้เฉพาะไฟล์รูปภาพ</p>';
           }
 
           selectedFiles = valid.slice(0, MAX_PHOTOS_PER_LOT);
           if (files.length > MAX_PHOTOS_PER_LOT) {
             msgEl.innerHTML = `<p class="error">เลือกได้สูงสุด ${MAX_PHOTOS_PER_LOT} รูป</p>`;
+          } else if (valid.some((f) => f.size > 8 * 1024 * 1024)) {
+            msgEl.innerHTML = '<p class="success">รูปใหญ่จะถูกบีบอัดอัตโนมัติก่อนอัปโหลด</p>';
           }
 
           renderPreviews();
@@ -507,14 +754,22 @@
             }
 
             for (let i = 0; i < selectedFiles.length; i++) {
-              const file = selectedFiles[i];
-              const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+              uploadBtn.textContent = `กำลังเตรียมรูป ${i + 1}/${selectedFiles.length}...`;
+
+              const original = selectedFiles[i];
+              const file = await compressImage(original);
+              const ext = "jpg";
               const storagePath = `${lotNo}/${Date.now()}_${i}.${ext}`;
 
-              const { error: uploadErr } = await getClient()
-                .storage.from("qc-photos").upload(storagePath, file, { contentType: file.type, upsert: false });
+              uploadBtn.textContent = `กำลังอัปโหลด ${i + 1}/${selectedFiles.length}...`;
 
-              if (uploadErr) throw new Error(`อัปโหลดรูปที่ ${i + 1} ไม่สำเร็จ: ${uploadErr.message}`);
+              try {
+                await uploadToStorage(storagePath, file);
+              } catch (uploadErr) {
+                throw new Error(
+                  `อัปโหลดรูปที่ ${i + 1} ไม่สำเร็จ (${formatFileSize(original.size)} → ${formatFileSize(file.size)}): ${getUploadErrorMessage(uploadErr)}`
+                );
+              }
 
               const { error: insertErr } = await getClient().from("photos").insert({
                 lot_no: lotNo, storage_path: storagePath, uploaded_by: currentUser.id,
@@ -531,23 +786,21 @@
             selectedFiles = [];
             fileInput.value = "";
             renderPreviews();
-            loadPhotoList();
+            switchQCTab("list");
           } catch (err) {
-            const msg = err.message?.includes("fetch")
-              ? "เชื่อมต่อไม่สำเร็จ — ตรวจ Supabase URL/Key และรัน fix-upload.sql"
-              : err.message || "อัปโหลดไม่สำเร็จ";
-            msgEl.innerHTML = `<p class="error">${msg}</p>`;
+            msgEl.innerHTML = `<p class="error">${getUploadErrorMessage(err)}</p>`;
           } finally {
             uploadBtn.textContent = "บันทึกรูป QC";
             updateUploadBtn();
           }
         });
 
-        loadPhotoList();
+        if (qcActiveTab === "list") loadPhotoList();
       }
 
       async function loadPhotoList() {
         const listEl = document.getElementById("photo-list");
+        if (!listEl) return;
         const { data: photos } = await getClient()
           .from("photos").select("*").order("created_at", { ascending: false });
 
